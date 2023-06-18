@@ -1,0 +1,251 @@
+/*
+
+AST generated for the code bellow
+
+PROGRAM Part11;
+VAR
+number : INTEGER;
+a, b   : INTEGER;
+y      : REAL;
+
+BEGIN {Part11}
+number := 2;
+a := number ;
+b := 10 * a + 10 * number DIV 4;
+y := 20 / 7 + 3.14
+END.  {Part11}
+*/
+
+{
+  "name": "Part11",
+  "block": {
+    "declarations": [
+      {
+        "varNode": {
+          "token": {
+            "type": "ID",
+            "value": "number"
+          },
+          "value": "number"
+        },
+        "typeNode": {
+          "token": {
+            "type": "INTEGER",
+            "value": "INTEGER"
+          },
+          "value": "INTEGER"
+        }
+      },
+      {
+        "varNode": {
+          "token": {
+            "type": "ID",
+            "value": "a"
+          },
+          "value": "a"
+        },
+        "typeNode": {
+          "token": {
+            "type": "INTEGER",
+            "value": "INTEGER"
+          },
+          "value": "INTEGER"
+        }
+      },
+      {
+        "varNode": {
+          "token": {
+            "type": "ID",
+            "value": "b"
+          },
+          "value": "b"
+        },
+        "typeNode": {
+          "token": {
+            "type": "INTEGER",
+            "value": "INTEGER"
+          },
+          "value": "INTEGER"
+        }
+      },
+      {
+        "varNode": {
+          "token": {
+            "type": "ID",
+            "value": "y"
+          },
+          "value": "y"
+        },
+        "typeNode": {
+          "token": {
+            "type": "REAL",
+            "value": "REAL"
+          },
+          "value": "REAL"
+        }
+      }
+    ],
+    "compoundStatements": {
+      "children": [
+        {
+          "left": {
+            "token": {
+              "type": "ID",
+              "value": "number"
+            },
+            "value": "number"
+          },
+          "operaion": {
+            "type": "ASSIGN",
+            "value": ":="
+          },
+          "right": {
+            "token": {
+              "type": "INTEGER_CONST",
+              "value": "2"
+            },
+            "value": "2"
+          }
+        },
+        {
+          "left": {
+            "token": {
+              "type": "ID",
+              "value": "a"
+            },
+            "value": "a"
+          },
+          "operaion": {
+            "type": "ASSIGN",
+            "value": ":="
+          },
+          "right": {
+            "token": {
+              "type": "ID",
+              "value": "number"
+            },
+            "value": "number"
+          }
+        },
+        {
+          "left": {
+            "token": {
+              "type": "ID",
+              "value": "b"
+            },
+            "value": "b"
+          },
+          "operaion": {
+            "type": "ASSIGN",
+            "value": ":="
+          },
+          "right": {
+            "left": {
+              "left": {
+                "token": {
+                  "type": "INTEGER_CONST",
+                  "value": "10"
+                },
+                "value": "10"
+              },
+              "operaion": {
+                "type": "MUL",
+                "value": "*"
+              },
+              "right": {
+                "token": {
+                  "type": "ID",
+                  "value": "a"
+                },
+                "value": "a"
+              }
+            },
+            "operaion": {
+              "type": "PLUS",
+              "value": "+"
+            },
+            "right": {
+              "left": {
+                "left": {
+                  "token": {
+                    "type": "INTEGER_CONST",
+                    "value": "10"
+                  },
+                  "value": "10"
+                },
+                "operaion": {
+                  "type": "MUL",
+                  "value": "*"
+                },
+                "right": {
+                  "token": {
+                    "type": "ID",
+                    "value": "number"
+                  },
+                  "value": "number"
+                }
+              },
+              "operaion": {
+                "type": "INTEGER_DIV",
+                "value": "DIV"
+              },
+              "right": {
+                "token": {
+                  "type": "INTEGER_CONST",
+                  "value": "4"
+                },
+                "value": "4"
+              }
+            }
+          }
+        },
+        {
+          "left": {
+            "token": {
+              "type": "ID",
+              "value": "y"
+            },
+            "value": "y"
+          },
+          "operaion": {
+            "type": "ASSIGN",
+            "value": ":="
+          },
+          "right": {
+            "left": {
+              "left": {
+                "token": {
+                  "type": "INTEGER_CONST",
+                  "value": "20"
+                },
+                "value": "20"
+              },
+              "operaion": {
+                "type": "FLOAT_DIV",
+                "value": "/"
+              },
+              "right": {
+                "token": {
+                  "type": "INTEGER_CONST",
+                  "value": "7"
+                },
+                "value": "7"
+              }
+            },
+            "operaion": {
+              "type": "PLUS",
+              "value": "+"
+            },
+            "right": {
+              "token": {
+                "type": "REAL_CONST",
+                "value": "3.14"
+              },
+              "value": "3.14"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
