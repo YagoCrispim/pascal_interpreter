@@ -7,9 +7,12 @@ program : PROGRAM variable SEMI block DOT
 
 block : declarations compound_statement
 
-declarations : VAR (variable_declaration SEMI)+
-             | (PROCEDURE ID SEMI block SEMI)*
-             | empty
+declarations : VAR (variable_declaration SEMI)+)*
+            | (PROCEDURE ID (LPAREN formal_parameter_list RPAREN)? SEMI block SEMI)*
+            | empty
+
+formal_parameter_list : formal_parameters
+                      | formal_parameters SEMI formal_parameter_list
 
 variable_declaration : ID (COMMA ID)* COLON type_spec
 

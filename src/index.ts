@@ -1,62 +1,36 @@
-import { Interpreter, Lexer, Parser } from './modules';
-import { SymbolTableBuilder } from './modules/symbol-table';
+import { Interpreter, Lexer, Parser, SemanticAnalyzer } from './modules';
 
-// VALID
-// const program = `
-// PROGRAM Part11;
-// VAR
-// number : INTEGER;
-// a, b   : INTEGER;
-// y      : REAL;
-// 
-// BEGIN {Part11}
-// number := 2;
-// a := number ;
-// b := 10 * a + 10 * number DIV 4;
-// y := 20 / 7 + 3.14
-// END.  {Part11}
-// `;
+global.SPI_DEBUG = true;
+global.LOG = (...args: any[]) => global.SPI_DEBUG && console.log(...args);
 
-// INVALID
-// const program = `
-//   PROGRAM Part10AST;
-//   VAR
-//       a: INTEGER;
-//   BEGIN
-//       c := 2 + b;
-//   END.
-// `;
+let program = `
+PROGRAM Main;
+   VAR x, y: REAL;
 
-const program = `
-PROGRAM Part12;
-VAR
-   a : INTEGER;
+   PROCEDURE Alpha(AlphaParam : INTEGER);
+      VAR AlphaVar : INTEGER;
+   BEGIN
+   END;
 
-PROCEDURE P1;
-VAR
-   a : REAL;
-   k : INTEGER;
+   PROCEDURE Beta(BetaParam : INTEGER);
+      VAR BetaVar : INTEGER;
+   BEGIN
+   END;
 
-   PROCEDURE P2;
-   VAR
-      a, z : INTEGER;
-   BEGIN {P2}
-      z := 777;
-   END;  {P2}
+   PROCEDURE Lambda(LambdaParam : INTEGER);
+      VAR LambdaVar : INTEGER;
+   BEGIN
+   END;
 
-BEGIN {P1}
+BEGIN { Main }
 
-END;  {P1}
-
-BEGIN {Part12}
-   a := 10;
-END.  {Part12}
-`
+END.  { Main }`;
 
 try {
+  global.LOG('Simple Pascal Interpreter.');
   const lexer = new Lexer(program);
   const ast = new Parser(lexer).parse();
-  new SymbolTableBuilder(ast).walk();
+  new SemanticAnalyzer(ast).walk();
   const interpreter = new Interpreter(ast);
   interpreter.interpret();
   console.log(interpreter.getGlobal());

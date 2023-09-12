@@ -1,185 +1,134 @@
 import { AbstractAst } from './ast.abstract';
 import { Token } from './token';
 
-export class AssignNode extends AbstractAst {
-  public readonly nodeName = AssignNode.name;
-
+export class AssignNode {
   constructor(
     public readonly left: VarNode,
     public readonly operaion: Token,
     public readonly right: UnaryOpNode | VarNode | NumNode,
-  ) {
-    super();
-  }
+  ) { }
 }
 
-export class BinOpNode extends AbstractAst {
-  public readonly nodeName = BinOpNode.name;
-
+export class BinOpNode {
   constructor(
     public readonly left: VarNode,
     public readonly operaion: Token,
     public readonly right: UnaryOpNode | VarNode,
-  ) {
-    super();
-  }
+  ) { }
 }
 
-export class BlockNode extends AbstractAst {
-  public readonly nodeName = BlockNode.name;
-
+export class BlockNode {
   constructor(
     public readonly declarations: VarDeclNode[],
     public readonly compoundStatements: CompoundNode,
-  ) {
-    super();
-  }
+  ) { }
 }
 
-export class CompoundNode extends AbstractAst {
-  public readonly nodeName = CompoundNode.name;
-
+export class CompoundNode {
   public children: AssignNode[] = [];
-
-  constructor() {
-    super();
-  }
+  constructor() { }
 }
 
-export class NoOpNode extends AbstractAst {
-  public readonly nodeName = NoOpNode.name;
-
-  constructor() {
-    super();
-  }
+export class NoOpNode {
+  constructor() { }
 }
 
-export class NumNode extends AbstractAst {
-  public readonly nodeName = NumNode.name;
-
+export class NumNode {
   public readonly value: number;
-
   constructor(public readonly token: Token) {
-    super();
     this.value = Number(token.value);
   }
 }
 
-export class ProgramNode extends AbstractAst {
-  public readonly nodeName = ProgramNode.name;
-
-  constructor(public readonly name: string, public readonly block: BlockNode) {
-    super();
-  }
+export class ProgramNode {
+  constructor(
+    public readonly name: string,
+    public readonly block: BlockNode
+  ) { }
 }
 
-export class TypeNode extends AbstractAst {
-  public readonly nodeName = TypeNode.name;
-
-  public readonly token: Token;
+export class TypeNode {
   public readonly value: Token['value'];
-
   constructor(token: Token) {
-    super();
-    this.token = token;
     this.value = token.value;
   }
 }
 
-export class UnaryOpNode extends AbstractAst {
-  public readonly nodeName = UnaryOpNode.name;
-
-  public readonly token: Token;
-  public readonly expression: BinOpNode | UnaryOpNode | VarNode | NumNode;
+export class UnaryOpNode {
   public readonly operation: Token;
-
   constructor(
-    token: Token,
-    expression: BinOpNode | UnaryOpNode | VarNode | NumNode,
+    public readonly token: Token,
+    public readonly expression: BinOpNode | UnaryOpNode | VarNode | NumNode,
   ) {
-    super();
-    this.token = token;
-    this.expression = expression;
     this.operation = token;
   }
 }
 
-export class VarDeclNode extends AbstractAst {
-  public readonly nodeName = VarDeclNode.name;
-
+export class VarDeclNode {
   constructor(
     public readonly varNode: VarNode,
     public readonly typeNode: TypeNode,
-  ) {
-    super();
-  }
+  ) { }
 }
 
-export class VarNode extends AbstractAst {
-  public readonly nodeName = VarNode.name;
-
-  public readonly token: Token;
+export class VarNode {
   public readonly value: Token['value'];
-
-  constructor(token: Token) {
-    super();
-    this.token = token;
+  constructor(public readonly token: Token) {
     this.value = token.value;
   }
 }
 
-export class Symbol extends AbstractAst {
-  public nodeName = Symbol.name;
+// export class Symbol {
+//   constructor(
+//     public readonly name: string,
+//     public readonly type: any | null
+//   ) { }
+// }
 
+export class BuiltInSymbol {
   constructor(
     public readonly name: string,
-    public readonly type: any | undefined, // TODO: Add type
-    public readonly category: string | undefined,
-  ) {
-    super();
-  }
+    public readonly category: any
+  ) { }
 }
 
-export class BuiltInSymbol extends Symbol {
-  public readonly nodeName = BuiltInSymbol.name;
-
-  private localName: string;
-
-  // TODO: Add type
-  constructor(name: string, category: any) {
-    super(name, category, undefined);
-    this.localName = name;
-  }
-
-  print() {
-    return this.localName;
-  }
+export class BuiltInTypeSymbol {
+  constructor(public readonly name: string) { }
 }
 
-export class VarSymbol extends Symbol {
-  public readonly nodeName = VarSymbol.name;
-
-  private localName: string;
-  private localType: Symbol | undefined;
-
-  constructor(name: string, type: Symbol | undefined, category: string) {
-    super(name, type, category);
-    this.localName = name;
-    this.localType = type;
-  }
-
-  print() {
-    return `${this.localName}::${this.localType}`;
-  }
-}
-
-export class ProcedureDeclNode extends AbstractAst {
-  public readonly nodeName = ProcedureDeclNode.name;
-
+export class VarSymbol {
   constructor(
-    private readonly name: string,
-    private readonly block: BlockNode, // TODO: Find a better name
-  ) {
-    super();
-  }
+    public readonly name: string,
+    public readonly type: BuiltInTypeSymbol | null, //? TODO: Add types
+  ) { }
 }
+
+export class ProcedureDeclNode {
+  constructor(
+    public readonly name: string,
+    public readonly params: Param[],
+    public readonly block: BlockNode
+  ) { }
+}
+
+/*
+  Formal parameters:
+    - Are parameters that show up in the declaration of a procedure.
+  
+  Arguments
+    - Are different variables and expressions passed to a procedure in a particular procedure call.
+*/
+export class Param {
+  constructor(
+    public readonly varNode: VarNode,
+    public readonly typeNode: TypeNode,
+  ) { }
+}
+
+export class ProcedureSymbol {
+  constructor(
+    public readonly name: string,
+    public readonly params?: Param[], // is this really optional?
+  ) { }
+}
+

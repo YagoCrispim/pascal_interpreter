@@ -1,163 +1,45 @@
-import {
-  AssignNode,
-  BinOpNode,
-  BlockNode,
-  CompoundNode,
-  NoOpNode,
-  NumNode,
-  ProcedureDeclNode,
-  ProgramNode,
-  Symbol,
-  TypeNode,
-  UnaryOpNode,
-  VarDeclNode,
-  VarNode,
-  VarSymbol,
-} from '../entities/ast-nodes';
+import { BuiltInTypeSymbol, ProcedureSymbol, VarSymbol } from '../entities';
 
-export class SymbolTable {
-  private readonly symbols: Record<string, Symbol> = {};
+type SymTabValue = VarSymbol | BuiltInTypeSymbol;
 
-  define(symbol: Symbol): void {
-    this.symbols[symbol.name] = symbol;
-  }
+/**
+ * What is a symbol?
+ *  - In a nutshell, a symbol is an identifier of some program entity like a variable,
+ *    a suroutine, a built-in type, etc.
+ */
+export class ScopedSymbolTable {
+  public readonly symbols: Map<string, SymTabValue> = new Map();
 
-  lookup(name: string): Symbol {
-    return this.symbols[name] || undefined;
-  }
-}
-
-export class SymbolTableBuilder {
-  private readonly symtab: SymbolTable = new SymbolTable();
-
-  constructor(private readonly ast: ProgramNode) {}
-
-  walk() {
-    this.visitProgram(this.ast);
-  }
-
-  private visit(
-    node:
-      | CompoundNode
-      | AssignNode
-      | NoOpNode
-      | VarNode
-      | UnaryOpNode
-      | BinOpNode
-      | NumNode
-      | BlockNode
-      | ProgramNode
-      | VarDeclNode
-      | TypeNode
-      | ProcedureDeclNode,
+  constructor(
+    public readonly scopeName: string,
+    public readonly scopeLevel: number,
+    // This is a pointer to the scope's enclosing scope
+    public readonly enclosingScope?: any,
   ) {
-    if (node.nodeName === BinOpNode.name) {
-      return this.visitBinOp(node as unknown as BinOpNode);
-    }
+    this.initBuiltins();
+  }
 
-    if (node.nodeName === BlockNode.name) {
-      return this.visitBlock(node as unknown as BlockNode);
-    }
+  define(symbol: VarSymbol | ProcedureSymbol): void {
+    // console.log('Inserting ', symbol);
+    this.symbols.set(symbol.name, symbol);
+  }
 
-    if (node.nodeName === NumNode.name) {
-      return this.visitNum(node as unknown as NumNode);
-    }
+  lookup(name: string): SymTabValue {
+    // console.log('Lookup ', name);
+    return this.symbols.get(name) || null;
+  }
 
-    if (node.nodeName === UnaryOpNode.name) {
-      return this.visitUnaryOp(node as unknown as UnaryOpNode);
-    }
-
-    if (node.nodeName === CompoundNode.name) {
-      return this.visitCompound(node as unknown as CompoundNode);
-    }
-
-    if (node.nodeName === NoOpNode.name) {
-      return this.visitNoOp(node as unknown as NoOpNode);
-    }
-
-    if (node.nodeName === AssignNode.name) {
-      return this.visitAssign(node as unknown as AssignNode);
-    }
-
-    if (node.nodeName === VarNode.name) {
-      return this.visitVar(node as unknown as VarNode);
-    }
-
-    if (node.nodeName === ProgramNode.name) {
-      return this.visitProgram(node as unknown as ProgramNode);
-    }
-
-    if (node.nodeName === VarDeclNode.name) {
-      return this.visitVarDecl(node as unknown as VarDeclNode);
-    }
-
-    if (node.nodeName === ProcedureDeclNode.name) {
-      return this.visitProcedureDecl(node as unknown as ProcedureDeclNode);
+  dump() {
+    console.log(`Scope name: ${this.scopeName}`);
+    console.log(`Scope level: ${this.scopeLevel}`);
+    console.log('Scope contents:');
+    for (let [_, symbol] of this.symbols) {
+      console.log(symbol);
     }
   }
 
-  private visitProgram(node: ProgramNode): void {
-    this.visit(node.block);
-  }
-
-  private visitCompound(node: CompoundNode): void {
-    for (let child of node.children) {
-      this.visit(child);
-    }
-  }
-
-  private visitBinOp(node: BinOpNode): any {
-    this.visit(node.left);
-    this.visit(node.right);
-  }
-
-  private visitUnaryOp(node: UnaryOpNode): any {
-    this.visit(node.expression);
-  }
-
-  private visitNum(node: NumNode) {
-    return;
-  }
-
-  private visitNoOp(node: NoOpNode): void {
-    return;
-  }
-
-  private visitAssign(node: AssignNode): any {
-    const varName = node.left.value; // TODO: Number as var name?
-    const varSymbol = this.symtab.lookup(String(varName));
-    if (!varSymbol) {
-      throw `Var "${varName}" not found.`;
-    }
-    this.visit(node.right);
-  }
-
-  private visitVar(node: VarNode): any {
-    const varName = node.value;
-    const varSymbol = this.symtab.lookup(String(varName));
-    if (!varSymbol) {
-      throw `Var ${varName} not found.`;
-    }
-  }
-
-  private visitBlock(node: BlockNode) {
-    for (let decl of node.declarations) {
-      this.visit(decl);
-    }
-    this.visit(node.compoundStatements);
-  }
-
-  private visitVarDecl(node: VarDeclNode) {
-    const typeName = node.typeNode.value;
-    const typeSymbol = this.symtab.lookup(String(typeName));
-
-    const varName = node.varNode.value;
-    const varSymbol = new VarSymbol(String(varName), typeSymbol, '');
-
-    this.symtab.define(varSymbol);
-  }
-
-  private visitProcedureDecl(node: ProcedureDeclNode) {
-    return;
+  private initBuiltins(): void {
+    this.symbols.set('INTEGER', new BuiltInTypeSymbol('INTEGER') as any);
+    this.symbols.set('REAL', new BuiltInTypeSymbol('REAL') as any);
   }
 }
