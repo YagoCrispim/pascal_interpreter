@@ -1,2 +1,2 @@
-export * from './token';
 export * from './ast-nodes';
+export * from './token';

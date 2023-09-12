@@ -6,7 +6,7 @@ import { TokenTypes } from '../types/token-types.enum';
 export class Token {
   constructor(
     public readonly type: TokenTypes,
-    public readonly value: string | number | undefined,
+    public readonly value: string | undefined,
   ) {
     this.type;
   }

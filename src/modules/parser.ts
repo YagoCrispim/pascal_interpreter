@@ -5,6 +5,7 @@ import {
   CompoundNode,
   NoOpNode,
   NumNode,
+  Param,
   ProcedureDeclNode,
   ProgramNode,
   Token,
@@ -13,9 +14,13 @@ import {
   VarDeclNode,
   VarNode,
 } from '../entities';
-import { reservedKeywords, TokenTypes } from '../types';
+import { Keywords, TokenTypes } from '../types';
 import { Lexer } from './lexer';
 
+/**
+ * The parser is responsible for reading the tokens and creating the AST.
+ * It's also responsible for raising an error in case of wrong syntax.
+ */
 export class Parser {
   private tokens: Token[] | undefined;
   private currentToken: Token;
@@ -27,7 +32,7 @@ export class Parser {
 
   parse(): ProgramNode {
     const program = this.program();
-    if (!this.isTheSameType(this.currentToken, TokenTypes.EOF)) {
+    if (!this.sameType(this.currentToken, TokenTypes.EOF)) {
       this.error();
     }
     return program;
@@ -39,7 +44,7 @@ export class Parser {
   }
 
   /**
-   * program : PROGRAM variable SEMI block DOT
+   program : PROGRAM variable SEMI block DOT
    */
   private program(): ProgramNode {
     this.eat(TokenTypes.PROGRAM);
@@ -53,7 +58,7 @@ export class Parser {
   }
 
   /**
-   * block : declarations compound_statement
+   block : declarations compound_statement
    */
   private block(): BlockNode {
     const declarations = this.declarations();
@@ -62,31 +67,42 @@ export class Parser {
   }
 
   /**
-   * declarations : VAR (variable_declaration SEMI)+
-      empty
+    declarations : VAR (variable_declaration SEMI)+)*
+                | (PROCEDURE ID (LPAREN formal_parameter_list RPAREN)? SEMI block SEMI)*
+                | empty
    */
   private declarations(): VarDeclNode[] {
     const declarations = [];
 
-    if (this.isTheSameType(this.currentToken, TokenTypes.VAR)) {
+    if (this.sameType(this.currentToken, TokenTypes.VAR)) {
       this.eat(TokenTypes.VAR);
 
       // TODO: Study this piece
-      while (this.isTheSameType(this.currentToken, TokenTypes.ID)) {
+      while (this.sameType(this.currentToken, TokenTypes.ID)) {
         const variableDeclaration = this.variableDeclaration();
         declarations.push(...variableDeclaration);
         this.eat(TokenTypes.SEMI);
       }
     }
 
-    while (this.currentToken.type === reservedKeywords.PROCEDURE) {
-      this.eat(reservedKeywords.PROCEDURE);
+    while (this.currentToken.type === Keywords.PROCEDURE) {
+      this.eat(Keywords.PROCEDURE);
       const procedureName = this.currentToken.value;
       this.eat(TokenTypes.ID);
+
+      let formalParametersList = [];
+
+      if (this.currentToken.type === TokenTypes.LPAREN) {
+        this.eat(TokenTypes.LPAREN);
+        formalParametersList = this.formaParametersList();
+        this.eat(TokenTypes.RPAREN);
+      }
+
       this.eat(TokenTypes.SEMI);
       const procedureCode = this.block();
       const procedureDeclaration = new ProcedureDeclNode(
         procedureName as string,
+        formalParametersList,
         procedureCode,
       );
       declarations.push(procedureDeclaration);
@@ -97,13 +113,58 @@ export class Parser {
   }
 
   /**
-   * variable_declaration : ID (COMMA ID)* COLON type_spec
+   formal_parameter_list : formal_parameters
+                          | formal_parameters SEMI formal_parameter_list
+   */
+  private formaParametersList(): Param[] {
+    if (!this.currentToken.type) return [];
+    const paramsNodes = this.formalParameters();
+    while (this.currentToken.type === TokenTypes.SEMI) {
+      this.eat(TokenTypes.SEMI);
+      const formalParameters = this.formalParameters();
+      formalParameters.forEach((param) => paramsNodes.push(param));
+    }
+    return paramsNodes;
+  }
+
+  /**
+    formal_parameters : ID (COMMA ID)* COLON type_spec
+
+    Example of procedures declaraions
+      - Ex1:
+        procedure getPerson(name: string, age: number)
+      - Ex2:
+        procedure getPerson(name, age: number)
+  */
+  private formalParameters(): Param[] {
+    const paramNodes: Param[] = [];
+    const paramTokens: Token[] = [this.currentToken];
+
+    this.eat(TokenTypes.ID);
+
+    while (this.currentToken.type === TokenTypes.COMMA) {
+      this.eat(TokenTypes.COMMA);
+      paramTokens.push(this.currentToken);
+      this.eat(TokenTypes.ID);
+    }
+    this.eat(TokenTypes.COLON);
+
+    const typeNode = this.typeSpec();
+    paramTokens.forEach((token) => {
+      const varNode = new VarNode(token);
+      paramNodes.push(new Param(varNode, typeNode));
+    });
+    return paramNodes;
+  }
+
+  /**
+   variable_declaration : ID (COMMA ID)* COLON type_spec
    */
   private variableDeclaration(): VarDeclNode[] {
     const variablesNodes = [new VarNode(this.currentToken)];
     this.eat(TokenTypes.ID);
 
-    while (this.isTheSameType(this.currentToken, TokenTypes.COMMA)) {
+    while (this.sameType(this.currentToken, TokenTypes.COMMA)) {
       this.eat(TokenTypes.COMMA);
       variablesNodes.push(new VarNode(this.currentToken));
       this.eat(TokenTypes.ID);
@@ -120,16 +181,16 @@ export class Parser {
   }
 
   /**
-   * type_spec : INTEGER | REAL
+   type_spec : INTEGER | REAL
    */
   private typeSpec(): TypeNode {
     const token = this.currentToken;
 
-    if (this.isTheSameType(this.currentToken, TokenTypes.INTEGER)) {
+    if (this.sameType(this.currentToken, TokenTypes.INTEGER)) {
       this.eat(TokenTypes.INTEGER);
     }
 
-    if (this.isTheSameType(this.currentToken, TokenTypes.REAL)) {
+    if (this.sameType(this.currentToken, TokenTypes.REAL)) {
       this.eat(TokenTypes.REAL);
     }
 
@@ -137,7 +198,7 @@ export class Parser {
   }
 
   /**
-   * compound_statement: BEGIN statement_list END
+   compound_statement : BEGIN statement_list END
    */
   private compoundStatement(): CompoundNode {
     this.eat(TokenTypes.BEGIN);
@@ -154,13 +215,13 @@ export class Parser {
   }
 
   /**
-   * statement_list : statement
-   *  | statement SEMI statement_list
+   statement_list : statement
+                | statement SEMI statement_list
    */
   private statementList(): (CompoundNode | AssignNode | NoOpNode)[] {
     const statementList = [this.statement()];
 
-    while (this.isTheSameType(this.currentToken, TokenTypes.SEMI)) {
+    while (this.sameType(this.currentToken, TokenTypes.SEMI)) {
       this.eat(TokenTypes.SEMI);
       statementList.push(this.statement());
     }
@@ -169,18 +230,18 @@ export class Parser {
   }
 
   /**
-   * statement: compound_statement
-   *  | assignment_statement
-   *  | empty
+   statement : compound_statement
+            | assignment_statement
+            | empty
    */
   private statement(): CompoundNode | AssignNode | NoOpNode {
     let result: CompoundNode | AssignNode | NoOpNode = this.empty();
 
-    if (this.isTheSameType(this.currentToken, TokenTypes.BEGIN)) {
+    if (this.sameType(this.currentToken, TokenTypes.BEGIN)) {
       result = this.compoundStatement();
     }
 
-    if (this.isTheSameType(this.currentToken, TokenTypes.ID)) {
+    if (this.sameType(this.currentToken, TokenTypes.ID)) {
       result = this.assignmentStatement();
     }
 
@@ -188,7 +249,7 @@ export class Parser {
   }
 
   /**
-   * assignment_statement : variable ASSIGN expr
+   assignment_statement : variable ASSIGN expr
    */
   private assignmentStatement(): AssignNode {
     const left = this.variable();
@@ -199,7 +260,7 @@ export class Parser {
   }
 
   /**
-   * variable : ID
+   variable: ID
    */
   private variable(): VarNode {
     const variable: VarNode = new VarNode(this.currentToken);
@@ -208,7 +269,7 @@ export class Parser {
   }
 
   /**
-   * expr : term ((PLUS | MINUS) term)*
+   expr : term ((PLUS | MINUS) term)*
    */
   private expression(): NumNode | BinOpNode | UnaryOpNode | VarNode {
     let node = this.term();
@@ -218,11 +279,11 @@ export class Parser {
     ) {
       const opearionToken = this.currentToken;
 
-      if (this.isTheSameType(this.currentToken, TokenTypes.PLUS)) {
+      if (this.sameType(this.currentToken, TokenTypes.PLUS)) {
         this.eat(TokenTypes.PLUS);
       }
 
-      if (this.isTheSameType(this.currentToken, TokenTypes.MINUS)) {
+      if (this.sameType(this.currentToken, TokenTypes.MINUS)) {
         this.eat(TokenTypes.MINUS);
       }
 
@@ -233,7 +294,7 @@ export class Parser {
   }
 
   /*
-   * term : factor ((MUL | INTEGER_DIV | FLOAT_DIV) factor)*
+   term : factor ((MUL | INTEGER_DIV | FLOAT_DIV) factor)*
    */
   private term(): NumNode | BinOpNode | UnaryOpNode | VarNode {
     let node = this.factor();
@@ -245,15 +306,15 @@ export class Parser {
     ) {
       const token: Token = this.currentToken;
 
-      if (this.isTheSameType(this.currentToken, TokenTypes.MUL)) {
+      if (this.sameType(this.currentToken, TokenTypes.MUL)) {
         this.eat(TokenTypes.MUL);
       }
 
-      if (this.isTheSameType(this.currentToken, TokenTypes.INTEGER_DIV)) {
+      if (this.sameType(this.currentToken, TokenTypes.INTEGER_DIV)) {
         this.eat(TokenTypes.INTEGER_DIV);
       }
 
-      if (this.isTheSameType(this.currentToken, TokenTypes.FLOAT_DIV)) {
+      if (this.sameType(this.currentToken, TokenTypes.FLOAT_DIV)) {
         this.eat(TokenTypes.FLOAT_DIV);
       }
 
@@ -264,38 +325,37 @@ export class Parser {
   }
 
   /*
-   * factor :
-   *   | PLUS factor
-   *   | MINUS factor
-   *   | INTEGER_CONST
-   *   | REAL_CONST
-   *   | LPAREN expr RPAREN
-   *   | variable
+   factor : PLUS factor
+        | MINUS factor
+        | INTEGER_CONST
+        | REAL_CONST
+        | LPAREN expr RPAREN
+        | variable
    */
   private factor(): BinOpNode | UnaryOpNode | VarNode | NumNode {
     const token: Token = this.currentToken;
 
-    if (this.isTheSameType(token, TokenTypes.PLUS)) {
+    if (this.sameType(token, TokenTypes.PLUS)) {
       this.eat(TokenTypes.PLUS);
       return new UnaryOpNode(token, this.factor());
     }
 
-    if (this.isTheSameType(token, TokenTypes.MINUS)) {
+    if (this.sameType(token, TokenTypes.MINUS)) {
       this.eat(TokenTypes.MINUS);
       return new UnaryOpNode(token, this.factor());
     }
 
-    if (this.isTheSameType(token, TokenTypes.INTEGER_CONST)) {
+    if (this.sameType(token, TokenTypes.INTEGER_CONST)) {
       this.eat(TokenTypes.INTEGER_CONST);
       return new NumNode(token);
     }
 
-    if (this.isTheSameType(token, TokenTypes.REAL_CONST)) {
+    if (this.sameType(token, TokenTypes.REAL_CONST)) {
       this.eat(TokenTypes.REAL_CONST);
       return new NumNode(token);
     }
 
-    if (this.isTheSameType(token, TokenTypes.LPAREN)) {
+    if (this.sameType(token, TokenTypes.LPAREN)) {
       this.eat(TokenTypes.LPAREN);
       const result = this.expression();
       this.eat(TokenTypes.RPAREN);
@@ -310,7 +370,7 @@ export class Parser {
   }
 
   private eat(tokenType: Token['type']) {
-    if (this.isTheSameType(this.currentToken, tokenType)) {
+    if (this.sameType(this.currentToken, tokenType)) {
       this.currentToken = this.advance();
     } else {
       this.error(`
@@ -319,23 +379,32 @@ export class Parser {
     }
   }
 
-  private isTheSameType(token: Token, type: Token['type']): boolean {
+  private sameType(token: Token, type: Token['type']): boolean {
     return token.type === type;
   }
 
   private error(message?: string) {
-    const stringify = (el: any) => JSON.stringify(el);
-    const currentToken = this.currentToken;
-    const tokens = this.tokens.slice(
-      this.carretPosition - 2,
-      this.carretPosition + 3,
-    );
-    console.error(`
-      [Error]: Syntax error \n
-      [Details]: Current token: ${stringify(currentToken)} \n
-      [Details]: Details: ${stringify(tokens)} \n
-      [Details]: Message: ${stringify(message)} \n
-    `);
+    try {
+      const stringify = (el: any) => JSON.stringify(el);
+      const currentToken = this.currentToken;
+      const tokens = (this.tokens || []).slice(
+        this.carretPosition - 2,
+        this.carretPosition + 3,
+      );
+      console.error(`
+        [Error]: Syntax error
+        [Details]:
+          - Current token: ${stringify(currentToken)}
+          - Tokens preview: ${
+            tokens.length
+              ? stringify(tokens)
+              : 'unable to show the tokens preview.'
+          }
+          - Error message: ${stringify(message)}
+      `);
+    } catch (err: any) {
+      console.log(err);
+    }
     process.exit(0);
   }
 }

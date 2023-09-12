@@ -42,51 +42,51 @@ export class Interpreter {
       | TypeNode
       | any, // TODO: Remove
   ) {
-    if (node.nodeName === 'BinOpNode') {
+    if (node instanceof BinOpNode) {
       return this.visitBinOp(node as unknown as BinOpNode);
     }
 
-    if (node.nodeName === 'BlockNode') {
+    if (node instanceof BlockNode) {
       return this.visitBlock(node as unknown as BlockNode);
     }
 
-    if (node.nodeName === 'NumNode') {
+    if (node instanceof NumNode) {
       return this.visitNum(node as unknown as NumNode);
     }
 
-    if (node.nodeName === 'UnaryOpNode') {
+    if (node instanceof UnaryOpNode) {
       return this.visitUnaryOp(node as unknown as UnaryOpNode);
     }
 
-    if (node.nodeName === 'CompoundNode') {
+    if (node instanceof CompoundNode) {
       return this.visitCompound(node as unknown as CompoundNode);
     }
 
-    if (node.nodeName === 'NoOpNode') {
+    if (node instanceof NoOpNode) {
       return this.visitNoOp(node as unknown as NoOpNode);
     }
 
-    if (node.nodeName === 'AssignNode') {
+    if (node instanceof AssignNode) {
       return this.visitAssign(node as unknown as AssignNode);
     }
 
-    if (node.nodeName === 'VarNode') {
+    if (node instanceof VarNode) {
       return this.visitVar(node as unknown as VarNode);
     }
 
-    if (node.nodeName === 'ProgramNode') {
+    if (node instanceof ProgramNode) {
       return this.visitProgram(node as unknown as ProgramNode);
     }
 
-    if (node.nodeName === 'VarDeclNode') {
+    if (node instanceof VarDeclNode) {
       return this.visitVarDecl(node as unknown as VarDeclNode);
     }
 
-    if (node.nodeName === 'TypeNode') {
+    if (node instanceof TypeNode) {
       return this.visitType(node as unknown as TypeNode);
     }
 
-    if (node.nodeName === ProcedureDeclNode.name) {
+    if (node instanceof ProcedureDeclNode) {
       return this.visitProcedureDecl(node as unknown as ProcedureDeclNode);
     }
 
@@ -141,7 +141,7 @@ export class Interpreter {
     return node.value;
   }
 
-  private visitNoOp(node: NoOpNode): void {
+  private visitNoOp(_: NoOpNode): void {
     return;
   }
 
@@ -169,15 +169,15 @@ export class Interpreter {
     this.visit(node.compoundStatements);
   }
 
-  private visitVarDecl(node: VarDeclNode) {
+  private visitVarDecl(_: VarDeclNode) {
     return;
   }
 
-  private visitType(node: TypeNode) {
+  private visitType(_: TypeNode) {
     return;
   }
 
-  private visitProcedureDecl(node: ProcedureDeclNode) {
+  private visitProcedureDecl(_: ProcedureDeclNode) {
     return;
   }
 }

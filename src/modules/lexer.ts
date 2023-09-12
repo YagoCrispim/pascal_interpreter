@@ -1,11 +1,5 @@
 import { Token } from '../entities';
-import {
-  TokenTypes,
-  alphanumeric,
-  letters,
-  numbers,
-  reservedKeywords,
-} from '../types';
+import { Keywords, TokenTypes, alphanumeric, letters, numbers } from '../types';
 
 /**
  * The lexer is responsible for reading the input code and identifying the tokens in it.
@@ -18,7 +12,7 @@ export class Lexer {
   private currentCharacter: string | undefined;
 
   constructor(code: string) {
-    this.code = code;
+    this.code = code.trim();
     this.currentCharacter = this.code[this.carretPosition];
   }
 
@@ -193,7 +187,7 @@ export class Lexer {
       result += this.currentCharacter;
       this.advance();
     }
-    const type = reservedKeywords[result] || TokenTypes.ID;
+    const type = Keywords[result] || TokenTypes.ID;
     return new Token(type, result);
   }
 

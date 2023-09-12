@@ -1,7 +1,7 @@
 /**
  * Reserved keywords for the language (Pascal).
  */
-export const reservedKeywords = {
+export const Keywords = {
   PROGRAM: 'PROGRAM',
   VAR: 'VAR',
   DIV: 'INTEGER_DIV',
