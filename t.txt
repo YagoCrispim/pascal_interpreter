@@ -1,0 +1,34 @@
+ip: 1
+stack: 0
+----
+
+
+GLOBAL SCOPE
+0 { name: 'number', value: undefined }
+1 { name: 'a', value: undefined }
+2 { name: 'b', value: undefined }
+3 { name: 'y', value: undefined }
+
+OPCODES SCOPE
+OP_SET_GLOBAL           0
+OP_CONSTANT             2
+OP_SET_GLOBAL           1
+OP_GET_GLOBAL           0
+OP_SET_GLOBAL           3
+OP_ADD
+OP_DIVIDE
+OP_CONSTANT             20
+OP_CONSTANT             7
+OP_CONSTANT             3.14
+OP_SET_GLOBAL           2
+OP_ADD
+OP_MULTIPLY
+OP_CONSTANT             10
+OP_GET_GLOBAL           1
+OP_DIVIDE
+OP_MULTIPLY
+OP_CONSTANT             10
+OP_GET_GLOBAL           0
+OP_CONSTANT             4
+
+
