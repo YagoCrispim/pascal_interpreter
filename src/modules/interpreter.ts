@@ -15,9 +15,11 @@ import {
 import { TokenTypes } from '../types';
 
 export class Interpreter {
-  private readonly GLOBAL_SCOPE: Record<string, any> = {};
+  public readonly opcodes: Array<string | string[]> = [];
+  public readonly constants: any[] = [];
+  private readonly GLOBAL_SCOPE: { name: string, value: any }[] = [];
 
-  constructor(private readonly ast: ProgramNode) {}
+  constructor(private readonly ast: ProgramNode) { }
 
   public interpret() {
     return this.visitProgram(this.ast);
