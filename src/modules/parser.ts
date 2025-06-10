@@ -405,6 +405,6 @@ export class Parser {
     } catch (err: any) {
       console.log(err);
     }
-    process.exit(0);
+    // process.exit(0);
   }
 }
