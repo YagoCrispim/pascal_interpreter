@@ -3,7 +3,7 @@ import { OP } from './op';
 interface IChunk {
   constants: any[];
   opcodes: (string | string[])[];
-  scope: {
+  globals: {
     name: string;
     value: any;
   }[];
@@ -20,7 +20,7 @@ export class Interpreter {
 
   private run() {
     const stack = this.stack;
-    const scope = this.chunk.scope;
+    const scope = this.chunk.globals;
 
     while (this.instruction) {
       this.read();
@@ -29,39 +29,48 @@ export class Interpreter {
         ? this.instruction[0]
         : this.instruction;
 
-      if (instructionName === OP.NIL) {
-      } else if (instructionName === OP.DEFINE_GLOBAL) {
-        stack.push(scope[this.instruction[1]].value);
-      } else if (instructionName === OP.GET_GLOBAL) {
-        stack.push(scope[this.instruction[1]].value);
-      } else if (instructionName === OP.SET_GLOBAL) {
-        const index = this.instruction[1];
-        scope[index].value = stack[stack.length - 1];
-      } else if (instructionName === OP.ADD) {
-        const v2 = stack.pop();
-        const v1 = stack.pop();
-        stack.push(v1 + v2);
-      } else if (instructionName === OP.DIVIDE) {
-        const v2 = stack.pop();
-        const v1 = stack.pop();
-        stack.push(v1 / v2);
-      } else if (instructionName === OP.MULTIPLY) {
-        const v2 = stack.pop();
-        const v1 = stack.pop();
-        stack.push(v1 * v2);
-      } else if (instructionName === OP.SUBTRACT) {
-        const v2 = stack.pop();
-        const v1 = stack.pop();
-        stack.push(v1 - v2);
-      } else if (instructionName === OP.CONSTANT) {
-        const index = this.instruction[1];
-        stack.push(this.chunk.constants[index]);
-      } else if (instructionName === OP.POP) {
-        stack.pop();
+      switch (instructionName) {
+        case OP.NIL: {
+        }
+        case OP.DEFINE_GLOBAL: {
+          stack.push(scope[this.instruction[1]].value);
+        }
+        case OP.GET_GLOBAL: {
+          stack.push(scope[this.instruction[1]].value);
+        }
+        case OP.SET_GLOBAL: {
+          const index = this.instruction[1];
+          scope[index].value = stack[stack.length - 1];
+        }
+        case OP.ADD: {
+          const v2 = stack.pop();
+          const v1 = stack.pop();
+          stack.push(v1 + v2);
+        }
+        case OP.DIVIDE: {
+          const v2 = stack.pop();
+          const v1 = stack.pop();
+          stack.push(v1 / v2);
+        }
+        case OP.MULTIPLY: {
+          const v2 = stack.pop();
+          const v1 = stack.pop();
+          stack.push(v1 * v2);
+        }
+        case OP.SUBTRACT: {
+          const v2 = stack.pop();
+          const v1 = stack.pop();
+          stack.push(v1 - v2);
+        }
+        case OP.CONSTANT: {
+          const index = this.instruction[1];
+          stack.push(this.chunk.constants[index]);
+        }
+        case OP.POP: {
+          stack.pop();
+        }
       }
     }
-
-    console.log('END.');
   }
 
   private read() {
