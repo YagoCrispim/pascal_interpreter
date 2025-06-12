@@ -1,4 +1,5 @@
 import { Lexer } from '../../src/modules';
+import { TokenTypes } from '../../src/types';
 
 export class FakeLexer {
   public methods = {
@@ -23,7 +24,7 @@ export const getTokens = (lexer: Lexer, iterationLimit: number = 1000) => {
     const token = lexer.getNextToken();
     tokens.push(token);
     if (
-      token.type === 'EOF' ||
+      token.type === TokenTypes.EOF ||
       controller.iterationLimit === controller.iterations
     ) {
       break;

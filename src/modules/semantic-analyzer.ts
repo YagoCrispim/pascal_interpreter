@@ -4,6 +4,7 @@ import {
   BlockNode,
   CompoundNode,
   NoOpNode,
+  ProcedureCall,
   ProcedureDeclNode,
   ProcedureSymbol,
   ProgramNode,
@@ -43,6 +44,7 @@ export class SemanticAnalyzer {
       | VarNode
       | AssignNode
       | ProcedureDeclNode
+      | ProcedureCall
       | BinOpNode,
   ) {
     if (node instanceof BlockNode) {
@@ -80,6 +82,10 @@ export class SemanticAnalyzer {
     if (node instanceof ProcedureDeclNode) {
       return this.visitProcedureDecl(node as ProcedureDeclNode);
     }
+
+    if (node instanceof ProcedureCall) {
+      return this.visitProcedureCall(node as ProcedureCall);
+    }
   }
 
   private visitBlock(node: BlockNode) {
@@ -90,16 +96,16 @@ export class SemanticAnalyzer {
   }
 
   private visitProgram(node: ProgramNode) {
-    console.log('Entering the global scope');
-    const globalScope = new ScopedSymbolTable('global', 1);
+    // console.log('Entering the global scope');
+    const globalScope = new ScopedSymbolTable('global', 1, this.currentScope);
     this.currentScope = globalScope;
 
     // visit subtree
     this.visit(node.block);
 
-    console.log(globalScope);
+    // console.log(globalScope);
     this.currentScope = this.currentScope.enclosingScope;
-    console.log('Leaving GS');
+    // console.log('Leaving GS');
   }
 
   private visitCompound(node: CompoundNode) {
@@ -140,7 +146,7 @@ export class SemanticAnalyzer {
     const varName = varDecl.varNode.value;
     const varSymbol = new VarSymbol(varName as string, typeSymbol);
 
-    this.currentScope.define(varSymbol);
+    this.currentScope.insert(varSymbol);
   }
 
   /**
@@ -151,9 +157,9 @@ export class SemanticAnalyzer {
    */
   private visitProcedureDecl(procedure: ProcedureDeclNode) {
     const procSymbol = new ProcedureSymbol(procedure.name);
-    this.currentScope.define(procSymbol);
+    this.currentScope.insert(procSymbol);
 
-    console.log('Enter scope ', procedure.name);
+    // console.log('Enter scope ', procedure.name);
     // Scope for parameters and local variables
     const procedureScope = new ScopedSymbolTable(
       procedure.name,
@@ -167,14 +173,20 @@ export class SemanticAnalyzer {
       const paramType = this.currentScope.lookup(param.typeNode.value);
       const paramName = param.varNode.value;
       const varSymbol = new VarSymbol(paramName, paramType);
-      this.currentScope.define(varSymbol);
+      this.currentScope.insert(varSymbol);
       procedure.params.push(varSymbol as any); // why var symbol and not "Param" node?
     });
 
     this.visit(procedure.block);
-    
-    console.log(procedureScope.symbols);
+
+    // console.log(procedureScope.symbols);
     this.currentScope = this.currentScope.enclosingScope;
-    console.log('Leaving scope ', procedure.name);
+    // console.log('Leaving scope ', procedure.name);
+  }
+
+  private visitProcedureCall(procedure: ProcedureCall) {
+    for (const node of procedure.params) {
+      this.visit(node);
+    }
   }
 }

@@ -132,3 +132,11 @@ export class ProcedureSymbol {
   ) { }
 }
 
+
+export class ProcedureCall {
+  constructor(
+    public readonly name: string,
+    public readonly params: any[],
+    public readonly token: Token
+  ) { }
+}

@@ -13,20 +13,26 @@ export class ScopedSymbolTable {
   constructor(
     public readonly scopeName: string,
     public readonly scopeLevel: number,
-    // This is a pointer to the scope's enclosing scope
-    public readonly enclosingScope?: any,
+    public readonly enclosingScope?: ScopedSymbolTable,
   ) {
     this.initBuiltins();
   }
 
-  define(symbol: VarSymbol | ProcedureSymbol): void {
-    // console.log('Inserting ', symbol);
+  insert(symbol: VarSymbol | ProcedureSymbol): void {
+    if (this.symbols.get(symbol.name)) {
+      throw "Error: Duplicate identifier '%s' found: " + symbol.name;
+    }
     this.symbols.set(symbol.name, symbol);
   }
 
-  lookup(name: string): SymTabValue {
-    // console.log('Lookup ', name);
-    return this.symbols.get(name) || null;
+  lookup(name: string): SymTabValue | null {
+    const res = this.symbols.get(name) || null;
+
+    if (!res && this.enclosingScope) {
+      return this.enclosingScope.lookup(name);
+    }
+
+    return res;
   }
 
   dump() {
