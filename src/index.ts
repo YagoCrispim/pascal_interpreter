@@ -1,43 +1,32 @@
-import {
-  Compiler,
-  Interpreter,
-  Lexer,
-  Parser,
-  SemanticAnalyzer,
-} from './modules';
+import { Lexer, Parser, SemanticAnalyzer } from './modules';
 import { AstInterpreter } from './modules/ast-interpreter';
 
 const program = `
 program Main;
-   var x, y: real;
+    var x: integer;
 
-   procedure Alpha(a: integer);
-      var y: integer;
-   begin
-      x := a + x + y;
-   end;
+    procedure Alpha(a : integer; b : integer);
+        procedure Beta();
+            procedure Omega();
+            begin
+                x := a * 10 + b * 2;
+               { Writeln(x);}
+            end;
+        
+        begin
+            Omega();
+        end;
+        
+    begin
+        x := (a + b) * 2;
+        Beta();
+    end;
 
 begin
-  Alpha(12);
+    Alpha(3 + 5, 7);
+    {Writeln('End!');}
 end.
 `;
-
-// const program = `
-// program Part11;
-// var
-//   number : integer;
-//   a, b   : integer;
-//   y      : real;
-
-// begin {Part11}
-//   number := 2;
-//   a := number ;
-//   y := 20 / 7 + 3.14;
-//   b := 10 * a + 10 * number DIV 4;
-
-//   print(a);
-// end.  {Part11}
-// `;
 
 try {
   const lexer = new Lexer(program);

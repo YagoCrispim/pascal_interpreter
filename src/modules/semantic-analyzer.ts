@@ -28,7 +28,7 @@ export class SemanticAnalyzer {
   constructor(
     private readonly ast: ProgramNode,
     private currentScope?: ScopedSymbolTable,
-  ) {}
+  ) { }
 
   walk() {
     this.visitProgram(this.ast);
@@ -156,7 +156,11 @@ export class SemanticAnalyzer {
     to it own internal scope level.
    */
   private visitProcedureDecl(procedure: ProcedureDeclNode) {
-    const procSymbol = new ProcedureSymbol(procedure.name);
+    const procSymbol = new ProcedureSymbol(
+      procedure.name,
+      procedure.params,
+      procedure.block
+    );
     this.currentScope.insert(procSymbol);
 
     // console.log('Enter scope ', procedure.name);
@@ -174,7 +178,6 @@ export class SemanticAnalyzer {
       const paramName = param.varNode.value;
       const varSymbol = new VarSymbol(paramName, paramType);
       this.currentScope.insert(varSymbol);
-      procedure.params.push(varSymbol as any); // why var symbol and not "Param" node?
     });
 
     this.visit(procedure.block);
@@ -188,5 +191,9 @@ export class SemanticAnalyzer {
     for (const node of procedure.params) {
       this.visit(node);
     }
+
+    procedure.symbol = this.currentScope.lookup(
+      procedure.name,
+    ) as ProcedureSymbol;
   }
 }

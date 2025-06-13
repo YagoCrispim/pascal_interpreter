@@ -69,7 +69,7 @@ export class Parser {
 
   /**
     declarations : VAR (variable_declaration SEMI)+)*
-                | (PROCEDURE ID (LPAREN formal_parameter_list RPAREN)? SEMI block SEMI)*
+                | (PROCEDURE ID (LPAREN formal_parameter_list? RPAREN)? SEMI block SEMI)*
                 | empty
    */
   private declarations(): VarDeclNode[] {
@@ -99,7 +99,10 @@ export class Parser {
 
       if (this.currentToken.type === TokenTypes.LPAREN) {
         this.eat(TokenTypes.LPAREN);
-        formalParametersList = this.formaParametersList();
+
+        if (!this.sameType(this.currentToken, TokenTypes.RPAREN)) {
+          formalParametersList = this.formaParametersList();
+        }
         this.eat(TokenTypes.RPAREN);
       }
 
@@ -142,6 +145,7 @@ export class Parser {
         procedure getPerson(name, age: number)
   */
   private formalParameters(): Param[] {
+
     const paramNodes: Param[] = [];
     const paramTokens: Token[] = [this.currentToken];
 
@@ -260,12 +264,12 @@ export class Parser {
    * proccall_statement : ID LPAREN (expr (COMMA expr)*)? RPAREN
    */
   private procedureCallStatement() {
+    const token = this.currentToken;
+    const name = token.value;
+
     // Pascal procedures don’t have return statements, so we can’t use procedure calls in expressions.
     this.eat(TokenTypes.ID);
     this.eat(TokenTypes.LPAREN);
-
-    const token = this.currentToken;
-    const name = token.value;
 
     const actualParams = [];
 
@@ -438,9 +442,5 @@ export class Parser {
       `);
 
     // process.exit(0);
-  }
-
-  private visitProcedureCall(procedure: ProcedureCall) {
-    return;
   }
 }

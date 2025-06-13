@@ -14,9 +14,11 @@ import {
   VarNode,
 } from '../entities/ast-nodes';
 import { TokenTypes } from '../types';
+import { ActivationRecord, ARType } from './activation-record';
+import { CallStack } from './call-stack';
 
 export class AstInterpreter {
-  private readonly GLOBAL_SCOPE: Record<string, any> = {};
+  private readonly callStack = new CallStack();
 
   constructor(private readonly ast: ProgramNode) {
     this.interpret();
@@ -27,7 +29,7 @@ export class AstInterpreter {
   }
 
   public getGlobal() {
-    return this.GLOBAL_SCOPE;
+    return this.callStack;
   }
 
   private visit(
@@ -94,10 +96,6 @@ export class AstInterpreter {
       return this.visitProcedureDecl(node as unknown as ProcedureDeclNode);
     }
 
-    if (node instanceof ProcedureDeclNode) {
-      return this.visitProcedureDecl(node as unknown as ProcedureDeclNode);
-    }
-
     if (node instanceof ProcedureCall) {
       return this.visitProcedureCall(node as unknown as ProcedureCall);
     }
@@ -106,7 +104,13 @@ export class AstInterpreter {
   }
 
   private visitProgram(node: ProgramNode): void {
+    const prograName = node.name;
+
+    const ar = new ActivationRecord(prograName, ARType.PROGRAM, 1);
+
+    this.callStack.push(ar);
     this.visit(node.block);
+    this.callStack.pop();
   }
 
   private visitCompound(node: CompoundNode): void {
@@ -159,19 +163,48 @@ export class AstInterpreter {
 
   private visitAssign(node: AssignNode): any {
     const varName = node.left.value;
-    this.GLOBAL_SCOPE[varName] = this.visit(node.right);
-    return this.GLOBAL_SCOPE[varName];
+    const value = this.visit(node.right);
+
+    let idx = this.callStack.size() - 1;
+    let ar: ActivationRecord;
+
+    while (idx >= 0) {
+      const arCandidate = this.callStack.get(idx);
+
+      if (arCandidate?.exist(varName)) {
+        ar = arCandidate;
+        break;
+      }
+
+      idx--;
+    }
+
+    if (!ar) {
+      throw `Variable "${varName}" not found.`;
+    }
+
+    ar.set(varName, value);
   }
 
   private visitVar(node: VarNode): any {
     const varName = node.value;
-    const programVar = this.GLOBAL_SCOPE[varName];
 
-    if (!programVar) {
-      throw 'Var not found in GLOBAL_SCOPE';
+    let idx = this.callStack.size() - 1;
+    let ar: ActivationRecord;
+
+    while (idx >= 0) {
+      const arCandidate = this.callStack.get(idx);
+
+      if (arCandidate?.exist(varName)) {
+        ar = arCandidate;
+        break;
+      }
+
+      idx--;
     }
 
-    return programVar;
+    const value = ar.get(varName);
+    return value;
   }
 
   private visitBlock(node: BlockNode) {
@@ -182,7 +215,7 @@ export class AstInterpreter {
   }
 
   private visitVarDecl(_: VarDeclNode) {
-    return;
+    this.callStack.peek().set(_.varNode.value, undefined);
   }
 
   private visitType(_: TypeNode) {
@@ -193,8 +226,27 @@ export class AstInterpreter {
     return;
   }
 
-  private visitProcedureCall(_: ProcedureCall) {
-    console.log('Calling', _);
-    return;
+  private visitProcedureCall(proc: ProcedureCall) {
+    const procName = proc.name;
+    const procSymbol = proc.symbol;
+
+    const ar = new ActivationRecord(
+      procName,
+      ARType.PROCEDURE,
+      procSymbol.scopeLevel + 1,
+    );
+
+    const formalParams = procSymbol.params;
+    const args = proc.params;
+
+    for (let i = 0; i < formalParams.length; i++) {
+      const paramSymbol = formalParams[i];
+      const argumentNode = args[i];
+      ar.set(paramSymbol.varNode.value, this.visit(argumentNode));
+    }
+
+    this.callStack.push(ar);
+    this.visit(proc.symbol.block);
+    this.callStack.pop();
   }
 }

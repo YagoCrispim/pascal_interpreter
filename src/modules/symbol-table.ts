@@ -1,6 +1,6 @@
 import { BuiltInTypeSymbol, ProcedureSymbol, VarSymbol } from '../entities';
 
-type SymTabValue = VarSymbol | BuiltInTypeSymbol;
+type SymTabValue = ProcedureSymbol | VarSymbol | BuiltInTypeSymbol;
 
 /**
  * What is a symbol?
