@@ -129,6 +129,17 @@ export class ProcedureSymbol {
   constructor(
     public readonly name: string,
     public readonly params?: Param[], // is this really optional?
+    public block?: BlockNode,
+    public scopeLevel = 0
   ) { }
 }
 
+
+export class ProcedureCall {
+  constructor(
+    public readonly name: string,
+    public readonly params: any[],
+    public readonly token: Token,
+    public symbol?: ProcedureSymbol,
+  ) { }
+}

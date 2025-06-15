@@ -2,12 +2,12 @@
  * Reserved keywords for the language (Pascal).
  */
 export const Keywords = {
-  PROGRAM: 'PROGRAM',
-  VAR: 'VAR',
-  DIV: 'INTEGER_DIV',
-  INTEGER: 'INTEGER',
-  REAL: 'REAL',
-  BEGIN: 'BEGIN',
-  END: 'END',
-  PROCEDURE: 'PROCEDURE',
+  program: 'program',
+  var: 'var',
+  div: 'integer_div',
+  integer: 'integer',
+  real: 'real',
+  begin: 'begin',
+  end: 'end',
+  procedure: 'procedure',
 };

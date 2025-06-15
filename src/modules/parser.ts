@@ -6,6 +6,7 @@ import {
   NoOpNode,
   NumNode,
   Param,
+  ProcedureCall,
   ProcedureDeclNode,
   ProgramNode,
   Token,
@@ -68,7 +69,7 @@ export class Parser {
 
   /**
     declarations : VAR (variable_declaration SEMI)+)*
-                | (PROCEDURE ID (LPAREN formal_parameter_list RPAREN)? SEMI block SEMI)*
+                | (PROCEDURE ID (LPAREN formal_parameter_list? RPAREN)? SEMI block SEMI)*
                 | empty
    */
   private declarations(): VarDeclNode[] {
@@ -82,11 +83,15 @@ export class Parser {
         const variableDeclaration = this.variableDeclaration();
         declarations.push(...variableDeclaration);
         this.eat(TokenTypes.SEMI);
+
+        if (this.sameType(this.currentToken, TokenTypes.VAR)) {
+          this.eat(TokenTypes.VAR);
+        }
       }
     }
 
-    while (this.currentToken.type === Keywords.PROCEDURE) {
-      this.eat(Keywords.PROCEDURE);
+    while (this.currentToken.type === Keywords.procedure) {
+      this.eat(Keywords.procedure);
       const procedureName = this.currentToken.value;
       this.eat(TokenTypes.ID);
 
@@ -94,7 +99,10 @@ export class Parser {
 
       if (this.currentToken.type === TokenTypes.LPAREN) {
         this.eat(TokenTypes.LPAREN);
-        formalParametersList = this.formaParametersList();
+
+        if (!this.sameType(this.currentToken, TokenTypes.RPAREN)) {
+          formalParametersList = this.formaParametersList();
+        }
         this.eat(TokenTypes.RPAREN);
       }
 
@@ -239,13 +247,43 @@ export class Parser {
 
     if (this.sameType(this.currentToken, TokenTypes.BEGIN)) {
       result = this.compoundStatement();
-    }
-
-    if (this.sameType(this.currentToken, TokenTypes.ID)) {
+    } else if (
+      this.sameType(this.currentToken, TokenTypes.ID) &&
+      this.lexer.currentCharacter === '('
+    ) {
+      result = this.procedureCallStatement();
+    } else if (this.sameType(this.currentToken, TokenTypes.ID)) {
       result = this.assignmentStatement();
     }
 
     return result;
+  }
+
+  /**
+   * proccall_statement : ID LPAREN (expr (COMMA expr)*)? RPAREN
+   */
+  private procedureCallStatement() {
+    const token = this.currentToken;
+    const name = token.value;
+
+    // Pascal procedures don’t have return statements, so we can’t use procedure calls in expressions.
+    this.eat(TokenTypes.ID);
+    this.eat(TokenTypes.LPAREN);
+
+    const actualParams = [];
+
+    if (this.currentToken.type !== TokenTypes.RPAREN) {
+      actualParams.push(this.expression());
+    }
+
+    while (this.currentToken.type !== TokenTypes.RPAREN) {
+      this.eat(TokenTypes.COMMA);
+      actualParams.push(this.expression());
+    }
+
+    this.eat(TokenTypes.RPAREN);
+
+    return new ProcedureCall(name, actualParams, token);
   }
 
   /**
@@ -376,6 +414,7 @@ export class Parser {
       this.error(`
       Expected token type "${tokenType}", but got ${this.currentToken.type}
       `);
+      process.exit(0);
     }
   }
 
@@ -384,27 +423,23 @@ export class Parser {
   }
 
   private error(message?: string) {
-    try {
-      const stringify = (el: any) => JSON.stringify(el);
-      const currentToken = this.currentToken;
-      const tokens = (this.tokens || []).slice(
-        this.carretPosition - 2,
-        this.carretPosition + 3,
-      );
-      console.error(`
+    const stringify = (el: any) => JSON.stringify(el);
+    const currentToken = this.currentToken;
+    const tokens = (this.tokens || []).slice(
+      this.carretPosition - 2,
+      this.carretPosition + 3,
+    );
+    throw new Error(`
         [Error]: Syntax error
         [Details]:
           - Current token: ${stringify(currentToken)}
-          - Tokens preview: ${
-            tokens.length
-              ? stringify(tokens)
-              : 'unable to show the tokens preview.'
-          }
+          - Tokens preview: ${tokens.length
+        ? stringify(tokens)
+        : 'unable to show the tokens preview.'
+      }
           - Error message: ${stringify(message)}
       `);
-    } catch (err: any) {
-      console.log(err);
-    }
+
     // process.exit(0);
   }
 }

@@ -9,7 +9,7 @@ import { Keywords, TokenTypes, alphanumeric, letters, numbers } from '../types';
 export class Lexer {
   private code: string = '';
   private carretPosition: number = 0;
-  private currentCharacter: string | undefined;
+  public currentCharacter: string | undefined;
 
   constructor(code: string) {
     this.code = code.trim();
